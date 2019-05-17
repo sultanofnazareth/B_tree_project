@@ -28,10 +28,8 @@ struct B_node {
     // to the subtree with keys greater than that of data[count-1]. */
     B_node<Record, order> *branch[order];
 
-    // search node to see if the target is present in the current node
-    bool search_node(B_node<Record, order> *current, const Record &target, int &position);
     // constructor
-    B_node();
+    B_node() {count = 0;};
 };
 
 template<class Record, int order>
@@ -44,12 +42,17 @@ public:
 
     void insert(const Record &new_entry);
 
+    // search node to see if the target is present in the current node
+    bool search_node(B_node<Record, order> *current, const Record &target, int &position);
+
     bool push_down(B_node<Record, order> *current, const Record &new_entry,
                    Record &median, B_node<Record, order> *&right_branch);
 
     void push_in(B_node<Record, order> *current, const Record &entry, B_node<Record, order> *right_branch, int position);
 
     void split_node(B_node<Record, order> *current, const Record &extra_entry, B_node<Record, order> *extra_branch, int position, B_node<Record, order> *&right_half, Record &median);
+
+    B_tree() { root = NULL;};
 
 private:
     B_node<Record, order> *root;
@@ -119,7 +122,7 @@ bool B_tree<Record, order>::push_down(B_node<Record, order> *current, const Reco
             }
         }
     }
-
+    return overflow;
 }
 
 template<class Record, int order>
@@ -163,6 +166,17 @@ void B_tree<Record, order>::split_node(B_node<Record, order> *current, const Rec
     median = current->data[current->count -1];
     right_half->branch[0] = current->branch[current->count];
     current->count--;
+}
+
+template<class Record, int order>
+bool B_tree<Record, order>::search_node(B_node<Record, order> *current, const Record &target, int &position) {
+    position = 0;
+    while (position < current->count && target > current->data[position])
+        position++;
+    if (position < current->count && target == current->data[position])
+        return true;
+    else
+        return false;
 }
 
 #endif //B_TREE_PROJECT_B_TREE_H
