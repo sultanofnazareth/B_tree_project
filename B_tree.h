@@ -29,7 +29,7 @@ struct B_node {
     B_node<Record, order> *branch[order];
 
     // search node to see if the target is present in the current node
-    void search_node(B_node<Record, order> *current, const Record &target, int &position);
+    bool search_node(B_node<Record, order> *current, const Record &target, int &position);
     // constructor
     B_node();
 };
@@ -41,6 +41,15 @@ public:
     void search_tree(Record &target);
 
     bool recursive_search_tree(B_node<Record, order> *current, Record &target);
+
+    void insert(const Record &new_entry);
+
+    bool push_down(B_node<Record, order> *current, const Record &new_entry,
+                   Record &median, B_node<Record, order> *&right_branch);
+
+    void push_in(B_node<Record, order> *current, const Record &entry, B_node<Record, order> *right_branch, int position);
+
+    void split_node(B_node<Record, order> *current, const Record &extra_entry, B_node<Record, order> *extra_branch, int position, B_node<Record, order> *&right_half, Record &median);
 
 private:
     B_node<Record, order> *root;
@@ -56,7 +65,7 @@ bool B_tree<Record, order>::recursive_search_tree(B_node<Record, order> *current
     bool present = false;
     int position;
     if (current != NULL) {
-        search_node(current, target, position);
+        present = search_node(current, target, position);
         if (!present)
             present = recursive_search_tree(current->branch[position], target);
         else
@@ -64,6 +73,98 @@ bool B_tree<Record, order>::recursive_search_tree(B_node<Record, order> *current
     }
     return present;
 }
+
+template<class Record, int order>
+void B_tree<Record, order>::insert(const Record &new_entry) {
+    Record median;
+    B_node<Record, order> *right_branch, *new_root;
+    bool result = push_down(root, new_entry, median, right_branch);
+    if (result) {
+        new_root = new B_node<Record, order>;
+        new_root->count = 1;
+        new_root->data[0] = median;
+        new_root->branch[0] = root;
+        new_root->branch[1] = right_branch;
+        root = new_root;
+        //result = success;
+    }
+    //return success;
+}
+
+template<class Record, int order>
+bool B_tree<Record, order>::push_down(B_node<Record, order> *current, const Record &new_entry, Record &median,
+                                      B_node<Record, order> *&right_branch) {
+    bool overflow;
+    int position;
+    if (current == NULL) {
+        median = new_entry;
+        right_branch = NULL;
+        overflow = true;
+    }
+    else {
+        if (search_node(current, new_entry, position)) {
+            std::cout << "Duplicate entry" << std::endl;
+            overflow = false;
+        }
+        else {
+            Record extra_entry;
+            B_node<Record, order> *extra_branch;
+            overflow = push_down(current->branch[position], new_entry, extra_entry, extra_branch);
+            if (overflow) {
+                if(current->count < order -1) {
+                    // result = success
+                    push_in(current, extra_entry, extra_branch, position);
+                }
+                else split_node(current, extra_entry, extra_branch, position, right_branch, median);
+            }
+        }
+    }
+
+}
+
+template<class Record, int order>
+void
+B_tree<Record, order>::push_in(B_node<Record, order> *current, const Record &entry, B_node<Record, order> *right_branch,
+                               int position) {
+    for (int i = current->count; i > position; i--) {
+        current->data[i] = current->data[i-1];
+        current->branch[i+1] = current->branch[i];
+    }
+    current->data[position] = entry;
+    current->branch[position + 1] = right_branch;
+    current->count++;
+}
+
+template<class Record, int order>
+void B_tree<Record, order>::split_node(B_node<Record, order> *current, const Record &extra_entry,
+                                       B_node<Record, order> *extra_branch, int position,
+                                       B_node<Record, order> *&right_half, Record &median) {
+    right_half = new B_node<Record, order>;
+    int mid = order/2;
+    if (position <= mid) {
+        for (int i = mid; i < order-1 ; i++) {
+            right_half->data[i-mid] = current->data[i];
+            right_half->branch[i + 1 - mid] = current->branch[i+1];
+        }
+        current->count = mid;
+        right_half->count = order-1-mid;
+        push_in(current, extra_entry, extra_branch, position);
+    }
+    else {
+        mid++;
+        for (int i = mid; i < order-1; i++) {
+            right_half->data[i-mid] = current->data[i];
+            right_half->branch[i+1-mid] = current->branch[i+1];
+        }
+        current->count = mid;
+        right_half->count = order-1-mid;
+        push_in(right_half, extra_entry, extra_branch, position-mid);
+    }
+    median = current->data[current->count -1];
+    right_half->branch[0] = current->branch[current->count];
+    current->count--;
+}
+
 #endif //B_TREE_PROJECT_B_TREE_H
 
 
