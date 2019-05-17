@@ -5,9 +5,24 @@ using namespace std;
 int main() {
     cout << "Hello, World!" << endl;
 
-    B_tree<int, 5> mytree;
+    B_tree<char, 5> mytree;
 
-    mytree.insert(5);
+    string testinput = "agfbkdhmjesirxclntup";
+
+    for (char& c : testinput) {
+        cout << c << endl;
+        //mytree.insert(c);
+    }
+
+    mytree.insert('a');
+    mytree.insert('g');
+    mytree.insert('f');
+    mytree.insert('b');
+    mytree.insert('a');
+
+
+
+
 
     return 0;
 }

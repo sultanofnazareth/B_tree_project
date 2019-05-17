@@ -52,6 +52,10 @@ public:
 
     void split_node(B_node<Record, order> *current, const Record &extra_entry, B_node<Record, order> *extra_branch, int position, B_node<Record, order> *&right_half, Record &median);
 
+    // traverse B-tree in prefix order, performing (*visit) on all Records
+    void preorder(void(*visit)(Record &)) {recursive_preorder(root, visit);};
+    void recursive_preorder(B_node<Record, order> *sub_root, void(*visit)(Record &));
+
     B_tree() { root = NULL;};
 
 private:
@@ -177,6 +181,17 @@ bool B_tree<Record, order>::search_node(B_node<Record, order> *current, const Re
         return true;
     else
         return false;
+}
+
+template<class Record, int order>
+void B_tree<Record, order>::recursive_preorder(B_node<Record, order> *sub_root, void (*visit)(Record &)) {
+    int i;
+    if (sub_root != NULL) {
+        for (i = 0; i < sub_root->count; i++)
+            (*visit)(sub_root->data[i]);
+        for (i = 0; i <= sub_root->count ; i++)
+            recursive_preorder(sub_root->branch[i], visit);
+    }
 }
 
 #endif //B_TREE_PROJECT_B_TREE_H
